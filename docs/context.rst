@@ -21,50 +21,67 @@ To override the ``ContextManager`` you will need to override the ``getContextMan
 method in the ``DefaultSentryClientFactory``. A simpler API will likely be provided in
 the future.
 
-Using Breadcrumbs
------------------
+Usage
+-----
 
 Breadcrumbs can be used to describe actions that occurred in your application leading
 up to an event being sent. For example, whether external API requests were made,
-or whether a user clicked on something in an Android application.
+or whether a user clicked on something in an Android application. By default the last
+100 breadcrumbs per context will be stored and sent with future events.
 
-Once a ``SentryClient`` instance has been initialized, either via a logging framework or manually,
-you can begin recording breadcrumbs. By default the last 100 breadcrumbs for a given
-context instance will be stored and sent with future events.
+The user can be set per context so that you know who was affected by each event.
+
+Once a ``SentryClient`` instance has been initialized you can begin setting state in
+the current context.
 
 .. sourcecode:: java
 
     import io.sentry.Sentry;
     import io.sentry.context.Context;
     import io.sentry.event.BreadcrumbBuilder;
-    import io.sentry.event.Breadcrumbs;
     import io.sentry.event.UserBuilder;
 
-    public void example() {
-        // Record a breadcrumb without having to look up the context instance manually
-        Sentry.record(
-            new BreadcrumbBuilder().setMessage("User did something specific again!").build()
-        );
+    public class MyClass {
+        public void staticAPIExample() {
+            Sentry.init();
 
-        // ... or retrieve and manipulate the context instance manually
+            // Set the current user in the context.
+            Sentry.setUser(new UserBuilder().setUsername("user1").build());
 
-        // Retrieve the stored SentryClient instance
-        SentryClient sentryClient = getStoredClient();
+            // Record a breadcrumb without having to look up the context instance manually.
+            Sentry.record(
+                new BreadcrumbBuilder().setMessage("User did something specific again!").build()
+            );
 
-        // Get the current context instance
-        Context context = sentryClient.getContext();
+            // Send an event with the context data attached.
+            Sentry.capture("New event message");
 
-        // Set the current User in the context
-        context.setUser(
-            new UserBuilder().setUsername("user1").build()
-        );
+            // Clear the context, useful if you need to add hooks in a framework
+            // to empty context between requests.
+            Sentry.clearContext();
+        }
 
-        // Record a breadcrumb in the context
-        context.recordBreadcrumb(
-            new BreadcrumbBuilder().setMessage("User did something specific!").build()
-        );
+        public void instanceAPIExample() {
+            SentryClient sentryClient = SentryClientFactory.sentryClient();
 
-        // Clear the context, useful if you need to add hooks in a framework
-        // to empty context between requests
-        context.clear()
+            // Get the current context instance.
+            Context context = sentryClient.getContext();
+
+            // Set the current user in the context.
+            context.setUser(
+                new UserBuilder().setUsername("user1").build()
+            );
+
+            // Record a breadcrumb in the context.
+            context.recordBreadcrumb(
+                new BreadcrumbBuilder().setMessage("User did something specific!").build()
+            );
+
+            // Send an event with the context data attached.
+            sentryClient.sendMessage("New event message");
+
+            // Clear the context, useful if you need to add hooks in a framework
+            // to empty context between requests.
+            context.clear();
+        }
     }
