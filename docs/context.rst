@@ -42,6 +42,13 @@ the current context.
     import io.sentry.event.UserBuilder;
 
     public class MyClass {
+
+        /**
+         * Examples using the (recommended) static API.
+         *
+         * Note that the ``Sentry.init`` method must be called before the static API
+         * is used, otherwise a ``NullPointerException`` will be thrown.
+         */
         public void staticAPIExample() {
             Sentry.init();
 
@@ -61,6 +68,9 @@ the current context.
             Sentry.clearContext();
         }
 
+        /**
+         * Examples that use the SentryClient instance directly.
+         */
         public void instanceAPIExample() {
             SentryClient sentryClient = SentryClientFactory.sentryClient();
 
